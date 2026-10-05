@@ -6,9 +6,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.View
+import android.webkit.ValueCallback
 import android.widget.Button
 import android.widget.Toast
 import org.mozilla.geckoview.GeckoRuntime
@@ -32,10 +31,7 @@ class MainActivity : Activity() {
         session.open(runtime)
         geckoView.setSession(session)
 
-        // Install our extensions
-        runtime.webExtensionController.install("resource://android/assets/ublock.xpi")
-        runtime.webExtensionController.install("resource://android/assets/cleaner.xpi")
-
+        // Track URLs and auto-inject ad-removal script on every page load
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onLocationChange(
                 session: GeckoSession,
@@ -45,6 +41,8 @@ class MainActivity : Activity() {
             ) {
                 if (url != null) {
                     currentUrl = url
+                    // Inject powerful ad-killing JavaScript on every page navigation
+                    injectAdBlocker(session)
                 }
             }
         }
@@ -68,14 +66,10 @@ class MainActivity : Activity() {
             }
         }
 
-        // Show a popup so you know the delay is happening intentionally
-        Toast.makeText(this, "Loading Adblocker...", Toast.LENGTH_LONG).show()
+        // Load YouTube immediately now that content blocking is native
+        session.loadUri("https://m.youtube.com")
 
-        // Wait exactly 3 seconds before opening YouTube to ensure uBlock is fully active
-        Handler(Looper.getMainLooper()).postDelayed({
-            session.loadUri("https://m.youtube.com")
-        }, 3000)
-
+        // Download Button Logic
         btnDownload.setOnClickListener {
             if (currentUrl.contains("watch") || currentUrl.contains("youtu.be")) {
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -87,6 +81,48 @@ class MainActivity : Activity() {
                 Toast.makeText(this, "Please open a specific video first!", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun injectAdBlocker(session: GeckoSession) {
+        val adBlockScript = """
+            (function() {
+                // Remove banners, promotions, and UI clutter
+                const hideElements = () => {
+                    const selectors = [
+                        'ytm-promoted-sparkles-web-renderer',
+                        'ytm-player-legacy-desktop-watch-ads-renderer',
+                        '.video-ads',
+                        '.ytp-ad-module',
+                        'ytm-promoted-app-install-action',
+                        'a[href*="vnd.youtube"]'
+                    ];
+                    selectors.forEach(selector => {
+                        document.querySelectorAll(selector).forEach(el => el.remove());
+                    });
+                };
+
+                // Aggressively skip video ads when they appear
+                const skipAds = () => {
+                    const video = document.querySelector('video');
+                    const skipBtn = document.querySelector('.ytp-ad-skip-button, .videoAdUiSkipButton, ytm-ad-skip-button-renderer');
+                    
+                    if (skipBtn) {
+                        skipBtn.click();
+                    }
+                    
+                    if (video && document.querySelector('.ad-showing, .ad-interrupting')) {
+                        video.currentTime = video.duration || video.currentTime + 10;
+                    }
+                };
+
+                setInterval(() => {
+                    hideElements();
+                    skipAds();
+                }, 300);
+            })();
+        """.trimIndent()
+
+        session.loadUri("javascript:$adBlockScript")
     }
 
     override fun onBackPressed() {

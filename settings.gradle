@@ -10,7 +10,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // This tells Gradle where to download the GeckoView engine
+        maven { url = uri("https://maven.mozilla.org/maven2/") }
     }
 }
-rootProject.name = "BraveWrapper"
+rootProject.name = "youtube_adfree"
 include ':app'

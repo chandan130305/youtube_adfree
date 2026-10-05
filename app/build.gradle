@@ -10,7 +10,8 @@ android {
         minSdk 26
         targetSdk 37
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+            // Removed the unsupported "x86" architecture
+            abiFilters "armeabi-v7a", "arm64-v8a", "x86_64"
         }
     }
 
@@ -24,7 +25,6 @@ android {
     }
 }
 
-// This block explicitly forces the compiler to ignore the version mismatch
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
 }

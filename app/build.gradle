@@ -19,10 +19,14 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     
-    // Modern built-in Kotlin configuration for AGP 9.0+
     kotlin {
         jvmToolchain(17)
     }
+}
+
+// This block explicitly forces the compiler to ignore the version mismatch
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    compilerOptions.freeCompilerArgs.add("-Xskip-metadata-version-check")
 }
 
 dependencies {

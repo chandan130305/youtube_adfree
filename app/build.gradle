@@ -1,17 +1,16 @@
 plugins {
-    id 'com.android.application' version '8.2.2'
+    id 'com.android.application' version '9.1.0'
     id 'org.jetbrains.kotlin.android' version '1.9.0'
 }
 
 android {
     namespace 'com.example.myapp'
-    compileSdk 34
+    compileSdk 37
 
     defaultConfig {
         minSdk 24
-        targetSdk 34
+        targetSdk 37
         
-        // GeckoView is huge, so we must tell Android which phone architectures to build for
         ndk {
             abiFilters "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
@@ -27,6 +26,5 @@ android {
 }
 
 dependencies {
-    // This downloads the actual Firefox engine into your app (October 2026 stable release)
     implementation 'org.mozilla.geckoview:geckoview:156.0.20260921121718'
 }

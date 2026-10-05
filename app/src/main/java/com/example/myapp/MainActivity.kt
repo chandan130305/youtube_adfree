@@ -22,48 +22,42 @@ class MainActivity : Activity() {
         val geckoView = findViewById<GeckoView>(R.id.geckoView)
         val btnDownload = findViewById<Button>(R.id.btnDownload)
 
-        // 1. Initialize the Firefox Engine
         val runtime = GeckoRuntime.create(this)
         session = GeckoSession()
         session.open(runtime)
         geckoView.setSession(session)
 
-        // 2. Install uBlock Origin silently in the background
         runtime.webExtensionController.install("resource://android/assets/ublock.xpi")
 
-        // 3. Track the current URL so we know which video to download
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLocationChange(session: GeckoSession, url: String?) {
+            // Updated signature to match the modern GeckoView requirements
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                hasUserGesture: Boolean
+            ) {
                 if (url != null) {
                     currentUrl = url
                 }
             }
         }
 
-        // Load YouTube initially
         session.loadUri("https://m.youtube.com")
 
-        // 4. Setup the Download Button
         btnDownload.setOnClickListener {
             if (currentUrl.contains("watch") || currentUrl.contains("youtu.be")) {
-                
-                // Copy the video link to the phone's clipboard
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("YouTube URL", currentUrl)
                 clipboard.setPrimaryClip(clip)
-                
                 Toast.makeText(this, "Link copied! Paste it in the box to download.", Toast.LENGTH_LONG).show()
-                
-                // Navigate instantly to your chosen downloader site
                 session.loadUri("https://vidssave.com/youtube-video-downloader-8hs")
-                
             } else {
                 Toast.makeText(this, "Please open a specific video first!", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // Ensure the Android Back Button goes back in web history instead of closing the app
     override fun onBackPressed() {
         session.goBack()
     }
